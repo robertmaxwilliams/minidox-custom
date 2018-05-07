@@ -46,10 +46,10 @@ KeyState leftKeys[HEIGHT][WIDTH];
 KeyState rightKeys[HEIGHT][WIDTH];
 
 // extra keymapping for held keys.
-KeyState* shiftKey = &leftKeys[0][0];
-KeyState* specialKey = &leftKeys[0][1];
-KeyState* controlKey = &leftKeys[0][2];
-KeyState* altKey = &leftKeys[0][3];
+KeyState* shiftKey = &leftKeys[3][0];
+KeyState* specialKey = &leftKeys[3][1];
+KeyState* controlKey = &leftKeys[3][2];
+KeyState* altKey = &leftKeys[3][3];
 
 // rx and tx (only rx is used) from rightHand legacy hardware
 SoftwareSerial rightHand(14, 15); // RX, TX
@@ -83,7 +83,7 @@ void setup() {
 }
 
 void loop() {
-  // sloppily implemented trampoline concurrency, 
+  // sloppily implemented trampoline concurrency, if you can call it that
   // maybe I should write this in a real language #GreenspunsTenthRule
 
   // read in if any keys have been PRESSED on left (master) side
@@ -171,6 +171,7 @@ char findKey(Side side, int row, int column){
 void keyboardPress(Side side, int row, int column, Action action){
   // used global KeyState to determine shift and special
   char key = findKey(side, row, column);
+  Serial.print(side);Serial.print(row);Serial.print(column);Serial.println(action);
   Serial.println(key);
   if (action == PRESS){
     Keyboard.press(key);
