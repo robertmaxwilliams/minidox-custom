@@ -4,8 +4,9 @@
 This programe polls out to some 
  rightHand is some legacy serial hardware that 
  spits out the following strings when a key is PRESSED:
+012345678901
 releasd: 1 3
-PRESSED: 1 3
+pressed: 1 3
 **Notice they are followed by a newline
 
 
@@ -37,7 +38,7 @@ const int readingPins[readingCount] = {9, 2, 3, 6, 4};
 const int pollingCount = HEIGHT; //horizontal wires
 const int pollingPins[pollingCount] = {10, 8, 7, 5};
 
-enum KeyState{PRESSED, RELEASEED};
+enum KeyState{PRESSED, RELEASED};
 enum Side{LEFT, RIGHT};
 enum Action{PRESS, RELEASE};
 
@@ -53,12 +54,16 @@ KeyState* altKey = &leftKeys[0][3];
 // rx and tx (only rx is used) from rightHand legacy hardware
 SoftwareSerial rightHand(14, 15); // RX, TX
 
-// read in buffer parsed everytime a newline is read
-// maybe I should use string class but like, why not optimize,
-// right guys?
-const int bufferSize = 80;
-char rightHandBuffer[bufferSize];
-int lastCharIndex = 0; // maybe rolling my own queue is a bad idea
+//struct to hold information about right hand's strings as
+// they come in and are parsed
+struct RightHandIncoming {
+  int index = 0;
+  int row;
+  int column;
+  KeyState keyState;
+}; 
+
+RightHandIncoming rightHandParser;
 
 void setup() {
   Keyboard.begin();
@@ -88,17 +93,42 @@ void loop() {
     for (int column = 0; column < WIDTH; column++){
       KeyState lastState = leftKeys[row][column];
       KeyState curState = (digitalRead(readingPins[column]) == LOW) 
-                                              ? PRESSED : RELEASEED;
+                                              ? PRESSED : RELEASED;
 
       if (curState == PRESSED && curState != lastState){
         keyboardPress(LEFT, row, column, PRESS);
-      } else if (curState == RELEASEED && curState != lastState){
+      } else if (curState == RELEASED && curState != lastState){
         keyboardPress(LEFT, row, column, RELEASE);
       }
 
       leftKeys[row][column] = curState;
     }
     digitalWrite(pollingPins[row], HIGH);
+  }
+
+  // read character from rightHand, and increment lastCharIndex. 
+  // on line ending, parse the buffer and reset it.
+  // failures on overflow or failed parse.
+  if (rightHand.available() > 0) {
+    char incoming = rightHand.read();
+    Serial.write(incoming);
+    if (incoming == '\n') {
+      // send keystroke and reset everything
+      // bounds checking is for people who lack faith
+      rightKeys[rightHandParser.row][rightHandParser.column] = rightHandParser.keyState;
+      Action action = (rightHandParser.keyState == PRESSED) ? PRESS : RELEASE; // trsr code == readable code
+      keyboardPress(RIGHT, rightHandParser.row, rightHandParser.column, action);
+      rightHandParser.index = 0;
+      // parse characters 2, 11, and 13
+    } else if (rightHandParser.index == 1) {
+      rightHandParser.keyState = (incoming == 'p') ? PRESSED : RELEASED;
+    } else if (rightHandParser.index == 10) {
+      rightHandParser.row = 3 - (incoming - '0'); // was upside down for some reason
+    } else if (rightHandParser.index == 12) {
+      rightHandParser.column = incoming - '0';
+    }
+
+    rightHandParser.index += 1;
   }
 }
 

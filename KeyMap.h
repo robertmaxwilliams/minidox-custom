@@ -1,6 +1,8 @@
 
 
 // keymaps 
+// special keys found here:
+// https://www.arduino.cc/reference/en/language/functions/usb/keyboard/keyboardmodifiers/
 
   
 // any key set to \0 will "fall through" to this one.
