@@ -74,7 +74,7 @@ char leftNavKeyMap[4][5] = {
 
 char rightNavKeyMap[4][5] = {
   {'y',  'u',  'i',  'o',  'p'},
-  {'KEY_LEFT_ARROW',  KEY_DOWN_ARROW,  KEY_UP_ARROW,  KEY_RIGHT_ARROW,  ';'},
+  {KEY_LEFT_ARROW,  KEY_DOWN_ARROW,  KEY_UP_ARROW,  KEY_RIGHT_ARROW,  ';'},
   {'b',  'n',  'm',  ',',  '.'},
   {'\0', '\t', '\n', ' ', '\0'}
 };
