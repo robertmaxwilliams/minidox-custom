@@ -50,6 +50,7 @@ KeyState* shiftKey = &leftKeys[3][0];
 KeyState* specialKey = &leftKeys[3][1];
 KeyState* controlKey = &leftKeys[3][2];
 KeyState* altKey = &leftKeys[3][3];
+KeyState* navKey = &rightKeys[3][3];
 
 // rx and tx (only rx is used) from rightHand legacy hardware
 SoftwareSerial rightHand(14, 15); // RX, TX
@@ -141,6 +142,8 @@ char findKey(Side side, int row, int column){
       character = leftShiftKeyMap[row][column];
     } else if (*specialKey == PRESSED){
       character = leftSpecialKeyMap[row][column];
+    } else if (*navKey == PRESSED){
+      character = leftNavKeyMap[row][column];
     } else {
       character = leftKeyMap[row][column];
     }
@@ -149,6 +152,8 @@ char findKey(Side side, int row, int column){
       character = rightShiftKeyMap[row][column];
     } else if (*specialKey == PRESSED){
       character = rightSpecialKeyMap[row][column];
+    } else if (*navKey == PRESSED){
+      character = rightNavKeyMap[row][column];
     } else {
       character = rightKeyMap[row][column];
     }
