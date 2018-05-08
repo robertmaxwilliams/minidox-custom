@@ -31,6 +31,7 @@ the keymaps are char[HEIGHT][WIDTH] stored as KeyMap[row][column]
 
 const int WIDTH = 5;
 const int HEIGHT = 4;
+const int DEBUG = true;
 
 // keyboard wires randomly plugged into pins 10 to 2
 const int readingCount = WIDTH; // vertical wires
@@ -38,9 +39,9 @@ const int readingPins[readingCount] = {9, 2, 3, 6, 4};
 const int pollingCount = HEIGHT; //horizontal wires
 const int pollingPins[pollingCount] = {10, 8, 7, 5};
 
-enum KeyState{PRESSED, RELEASED};
+enum KeyState{RELEASED, PRESSED};
 enum Side{LEFT, RIGHT};
-enum Action{PRESS, RELEASE};
+enum Action{RELEASE, PRESS};
 
 KeyState leftKeys[HEIGHT][WIDTH];
 KeyState rightKeys[HEIGHT][WIDTH];
@@ -50,7 +51,7 @@ KeyState* shiftKey = &leftKeys[3][0];
 KeyState* specialKey = &leftKeys[3][1];
 KeyState* controlKey = &leftKeys[3][2];
 KeyState* altKey = &leftKeys[3][3];
-KeyState* navKey = &rightKeys[3][3];
+KeyState* navKey = &rightKeys[3][4];
 
 // rx and tx (only rx is used) from rightHand legacy hardware
 SoftwareSerial rightHand(14, 15); // RX, TX
@@ -62,6 +63,8 @@ struct RightHandIncoming {
   int row;
   int column;
   KeyState keyState;
+  bool ready = false;
+
 }; 
 
 RightHandIncoming rightHandParser;
@@ -110,28 +113,56 @@ void loop() {
   // read character from rightHand, and increment lastCharIndex. 
   // on line ending, parse the buffer and reset it.
   // failures on overflow or failed parse.
+  // also the order of incrementation is off by one. oops. Not my problem.
+  // TODO refactor this whole thing
   if (rightHand.available() > 0) {
     char incoming = rightHand.read();
-    Serial.write(incoming);
-    if (incoming == '\n') {
+    //Serial.write(incoming);
+    if (incoming == '\n' && rightHandParser.ready) {
       // send keystroke and reset everything
       // bounds checking is for people who lack faith
       rightKeys[rightHandParser.row][rightHandParser.column] = rightHandParser.keyState;
       Action action = (rightHandParser.keyState == PRESSED) ? PRESS : RELEASE; // trsr code == readable code
       keyboardPress(RIGHT, rightHandParser.row, rightHandParser.column, action);
-      rightHandParser.index = 0;
       // parse characters 2, 11, and 13
     } else if (rightHandParser.index == 1) {
       rightHandParser.keyState = (incoming == 'p') ? PRESSED : RELEASED;
+      rightHandParser.ready = true; // is this isn't set, then fail this line
     } else if (rightHandParser.index == 10) {
       rightHandParser.row = 3 - (incoming - '0'); // was upside down for some reason
     } else if (rightHandParser.index == 12) {
       rightHandParser.column = incoming - '0';
     }
 
+    if (incoming == '\n') {
+        rightHandParser.index = 0;
+        rightHandParser.ready = false;
+    }
+
     rightHandParser.index += 1;
   }
 }
+
+// yummy arrow code ;)
+void printKeyState() {
+  if (DEBUG == false) {return;}
+  for (int row = 0; row < HEIGHT; row++){
+    for (int side = 0; side < 2; side++){
+      for (int column = 0; column < WIDTH; column++){
+        if (side == 0) {
+          // who doesn't love some terse ternary expressions
+          Serial.write(leftKeys[row][column] ? 'X' : '.');
+        } else {
+          Serial.write(rightKeys[row][column] ? 'X' : '.');
+        }
+      }
+      Serial.write('\t');
+    }
+    Serial.write('\n');
+  }
+  Serial.write('\n');
+}
+          
 
 char findKey(Side side, int row, int column){
   // this is a failure. Flat would make so much sense, but then my data would
@@ -147,6 +178,7 @@ char findKey(Side side, int row, int column){
     } else {
       character = leftKeyMap[row][column];
     }
+
   } else { // I sure hope side == RIGHT
     if (*shiftKey == PRESSED){
       character = rightShiftKeyMap[row][column];
@@ -170,14 +202,14 @@ char findKey(Side side, int row, int column){
   } else { //side == RIGHT
     return rightModifiers[row][column];
   }
-
 }
 
 void keyboardPress(Side side, int row, int column, Action action){
+  printKeyState();
   // used global KeyState to determine shift and special
   char key = findKey(side, row, column);
-  Serial.print(side);Serial.print(row);Serial.print(column);Serial.println(action);
-  Serial.println(key);
+  //Serial.print(side);Serial.print(row);Serial.print(column);Serial.println(action);
+  //Serial.println(key);
   if (action == PRESS){
     Keyboard.press(key);
   } else { // action == RELEASE
