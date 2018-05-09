@@ -45,7 +45,7 @@ enum Side{LEFT, RIGHT};
 // but at this point I would like to be explicit
 // about whether I am describing a key as
 // pressed or unpressed, or describing what to do to a key.
-enum Action{RELEASE, PRESS};
+enum Action{RELEASE, PRESS, TOGGLE};
 enum KeyState{RELEASED, PRESSED};
 
 KeyState actionToState(Action action) {
@@ -54,6 +54,12 @@ KeyState actionToState(Action action) {
     case PRESS: return PRESSED;
   }
 }
+KeyState actionToState(Action action, KeyState curState) { 
+  // overload for toggle functionality
+  if (action != TOGGLE) { return actionToState(action); }
+  return (curState == PRESSED) ? RELEASED : PRESSED;
+}
+
 Action stateToAction(KeyState state) {
   switch(state){
     case RELEASED: return RELEASE;
@@ -61,6 +67,7 @@ Action stateToAction(KeyState state) {
   }
 }
 
+// global state, should only be modified within keyboardPress
 KeyState leftKeys[HEIGHT][WIDTH];
 KeyState rightKeys[HEIGHT][WIDTH];
 
@@ -117,10 +124,8 @@ void loop() {
       KeyState curState = (digitalRead(readingPins[column]) == LOW) 
                                               ? PRESSED : RELEASED;
 
-      if (curState == PRESSED && curState != lastState){
-        keyboardPress(LEFT, row, column, PRESS);
-      } else if (curState == RELEASED && curState != lastState){
-        keyboardPress(LEFT, row, column, RELEASE);
+      if (curState != lastState){
+        keyboardPress(LEFT, row, column, TOGGLE);
       }
 
       leftKeys[row][column] = curState;
@@ -137,10 +142,9 @@ void loop() {
     char incoming = rightHand.read();
     //Serial.write(incoming);
     if (incoming == '\n' && rightHandParser.ready) {
-      // send keystroke and reset everything
       // bounds checking is for people who lack faith
-      keyboardPress(RIGHT, rightHandParser.row, rightHandParser.column, action);
-      // parse characters 2, 11, and 13
+      keyboardPress(RIGHT, rightHandParser.row, rightHandParser.column, TOGGLE);
+    // parse characters 2, 11, and 13
     } else if (rightHandParser.index == 1) {
       rightHandParser.keyState = (incoming == 'p') ? PRESSED : RELEASED;
       rightHandParser.ready = true; // is this isn't set, then fail this line
@@ -150,7 +154,7 @@ void loop() {
       rightHandParser.column = incoming - '0';
     }
 
-    // not matter what happened, reset rightHandParser
+    // not matter what happened, reset rightHandParser if we're at a newline
     if (incoming == '\n') {
         rightHandParser.index = 0;
         rightHandParser.ready = false;
@@ -181,7 +185,7 @@ void printKeyState() {
 }
           
 
-char findKey(Side side, int row, int column){
+char getCharacter(Side side, int row, int column){
   // this is a failure. Flat would make so much sense, but then my data would
   // have to be nested. I need some sort of system of flags.
   char character;
@@ -221,19 +225,31 @@ char findKey(Side side, int row, int column){
   }
 }
 
+// sends keypress to computer, and modifies out global state leftKeys and rightKeys
 void keyboardPress(Side side, int row, int column, Action action){
+  Serial.println("before:");
   printKeyState();
   // mutate global state of keys
-  if (side == LEFT){
-  leftKeys[row][column] = action;
-  } else {
 
-  Action action = (rightHandParser.keyState == PRESSED) ? PRESS : RELEASE; // trsr code == readable code
+  // gets the right keyboard and cell within it, and sets to new value
+  // SO TERSE!
+  KeyState* activeKey = &((side == LEFT) ? leftKeys : rightKeys)[row][column];
+  *activeKey = actionToState(action, *activeKey);
+
   // used global KeyState to determine shift and special
-  char key = findKey(side, row, column);
-  if (action == PRESS){
+  char key = getCharacter(side, row, column);
+
+  Serial.println("after:");
+  printKeyState();
+  Serial.print("row: "); Serial.print(row); Serial.print(" column: "); Serial.print(column);Serial.println();
+  Serial.print(key); Serial.println((int) key);
+  Serial.println();
+
+  // send the keypress or release to PC
+  // based on our updated global state
+  if (*activeKey == PRESSED){
     Keyboard.press(key);
-  } else { // action == RELEASE
+  } else { // *activeKey == RELEASED
     Keyboard.release(key);
   }
 }
