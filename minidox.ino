@@ -1,15 +1,6 @@
 
 /* 
 
-This programe polls out to some 
- rightHand is some legacy serial hardware that 
- spits out the following strings when a key is PRESSED:
-012345678901
-releasd: 1 3
-pressed: 1 3
-**Notice they are followed by a newline
-
-
 glossary of terms:
 
 polling: writing one line active while others are inactive (active low in this project)
@@ -140,6 +131,7 @@ void loop() {
   // TODO refactor this whole thing
   if (rightHand.available() > 0) {
     char incoming = rightHand.read();
+    Serial.write(incoming);
     //Serial.write(incoming);
     if (incoming == '\n' && rightHandParser.ready) {
       // bounds checking is for people who lack faith
@@ -257,3 +249,9 @@ void keyboardPress(Side side, int row, int column, Action action){
 // notes on shift: it seems shift and upper/lowercase letters are independant, 
 // so you could send shift+'a' or 'A'. I'm not sure how real keyboards do this
 // but we'll see
+
+// examples of printouts from rightHand:
+/*
+releasd: 1 3
+pressed: 1 3
+*/
