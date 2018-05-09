@@ -132,19 +132,24 @@ void loop() {
   if (rightHand.available() > 0) {
     char incoming = rightHand.read();
     Serial.write(incoming);
-    //Serial.write(incoming);
     if (incoming == '\n' && rightHandParser.ready) {
       // bounds checking is for people who lack faith
-      keyboardPress(RIGHT, rightHandParser.row, rightHandParser.column, TOGGLE);
+      keyboardPress(RIGHT, rightHandParser.row, rightHandParser.column, stateToAction(rightHandParser.keyState));
     // parse characters 2, 11, and 13
-    } else if (rightHandParser.index == 1) {
+    } else if (rightHandParser.index == 0) {
       rightHandParser.keyState = (incoming == 'p') ? PRESSED : RELEASED;
       rightHandParser.ready = true; // is this isn't set, then fail this line
-    } else if (rightHandParser.index == 10) {
+      Serial.print("|| p or r?: "); Serial.println(incoming);
+    } else if (rightHandParser.index == 9) {
       rightHandParser.row = 3 - (incoming - '0'); // was upside down for some reason
-    } else if (rightHandParser.index == 12) {
+      Serial.print("|| first number:"); Serial.println(incoming);
+    } else if (rightHandParser.index == 11) {
       rightHandParser.column = incoming - '0';
+      Serial.print("|| second number:"); Serial.println(incoming);
     }
+
+    // increment index for string that we're parsing
+    rightHandParser.index += 1;
 
     // not matter what happened, reset rightHandParser if we're at a newline
     if (incoming == '\n') {
@@ -152,7 +157,6 @@ void loop() {
         rightHandParser.ready = false;
     }
 
-    rightHandParser.index += 1;
   }
 }
 
@@ -219,13 +223,13 @@ char getCharacter(Side side, int row, int column){
 
 // sends keypress to computer, and modifies out global state leftKeys and rightKeys
 void keyboardPress(Side side, int row, int column, Action action){
-  Serial.println("before:");
-  printKeyState();
   // mutate global state of keys
 
   // gets the right keyboard and cell within it, and sets to new value
   // SO TERSE!
   KeyState* activeKey = &((side == LEFT) ? leftKeys : rightKeys)[row][column];
+  Serial.println("apply action {action} with current state {state}");
+  Serial.print(action); Serial.println(*activeKey);
   *activeKey = actionToState(action, *activeKey);
 
   // used global KeyState to determine shift and special
@@ -235,7 +239,10 @@ void keyboardPress(Side side, int row, int column, Action action){
   printKeyState();
   Serial.print("row: "); Serial.print(row); Serial.print(" column: "); Serial.print(column);Serial.println();
   Serial.print(key); Serial.println((int) key);
-  Serial.println();
+  Serial.println("held keys: shift, special, conrole, alt, nav");
+  Serial.print(*shiftKey); Serial.print(*specialKey); Serial.print(*controlKey); Serial.print(*altKey); Serial.print(*navKey);
+  Serial.print('\n');
+
 
   // send the keypress or release to PC
   // based on our updated global state
