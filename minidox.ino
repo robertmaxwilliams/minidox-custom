@@ -39,19 +39,37 @@ const int readingPins[readingCount] = {9, 2, 3, 6, 4};
 const int pollingCount = HEIGHT; //horizontal wires
 const int pollingPins[pollingCount] = {10, 8, 7, 5};
 
-enum KeyState{RELEASED, PRESSED};
 enum Side{LEFT, RIGHT};
+
+// having these as seperate types is debatable, 
+// but at this point I would like to be explicit
+// about whether I am describing a key as
+// pressed or unpressed, or describing what to do to a key.
 enum Action{RELEASE, PRESS};
+enum KeyState{RELEASED, PRESSED};
+
+KeyState actionToState(Action action) {
+  switch(action){
+    case RELEASE: return RELEASED;
+    case PRESS: return PRESSED;
+  }
+}
+Action stateToAction(KeyState state) {
+  switch(state){
+    case RELEASED: return RELEASE;
+    case PRESSED: return PRESS;
+  }
+}
 
 KeyState leftKeys[HEIGHT][WIDTH];
 KeyState rightKeys[HEIGHT][WIDTH];
 
-// extra keymapping for held keys.
-KeyState* shiftKey = &leftKeys[3][0];
-KeyState* specialKey = &leftKeys[3][1];
-KeyState* controlKey = &leftKeys[3][2];
-KeyState* altKey = &leftKeys[3][3];
-KeyState* navKey = &rightKeys[3][4];
+// These are read by findCharacter to determine modifier state
+const KeyState* shiftKey = &leftKeys[3][0];
+const KeyState* specialKey = &leftKeys[3][1];
+const KeyState* controlKey = &leftKeys[3][2];
+const KeyState* altKey = &leftKeys[3][3];
+const KeyState* navKey = &rightKeys[3][4];
 
 // rx and tx (only rx is used) from rightHand legacy hardware
 SoftwareSerial rightHand(14, 15); // RX, TX
@@ -121,8 +139,6 @@ void loop() {
     if (incoming == '\n' && rightHandParser.ready) {
       // send keystroke and reset everything
       // bounds checking is for people who lack faith
-      rightKeys[rightHandParser.row][rightHandParser.column] = rightHandParser.keyState;
-      Action action = (rightHandParser.keyState == PRESSED) ? PRESS : RELEASE; // trsr code == readable code
       keyboardPress(RIGHT, rightHandParser.row, rightHandParser.column, action);
       // parse characters 2, 11, and 13
     } else if (rightHandParser.index == 1) {
@@ -134,6 +150,7 @@ void loop() {
       rightHandParser.column = incoming - '0';
     }
 
+    // not matter what happened, reset rightHandParser
     if (incoming == '\n') {
         rightHandParser.index = 0;
         rightHandParser.ready = false;
@@ -206,10 +223,14 @@ char findKey(Side side, int row, int column){
 
 void keyboardPress(Side side, int row, int column, Action action){
   printKeyState();
+  // mutate global state of keys
+  if (side == LEFT){
+  leftKeys[row][column] = action;
+  } else {
+
+  Action action = (rightHandParser.keyState == PRESSED) ? PRESS : RELEASE; // trsr code == readable code
   // used global KeyState to determine shift and special
   char key = findKey(side, row, column);
-  //Serial.print(side);Serial.print(row);Serial.print(column);Serial.println(action);
-  //Serial.println(key);
   if (action == PRESS){
     Keyboard.press(key);
   } else { // action == RELEASE
