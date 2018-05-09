@@ -131,7 +131,7 @@ void loop() {
   // TODO refactor this whole thing
   if (rightHand.available() > 0) {
     char incoming = rightHand.read();
-    Serial.write(incoming);
+    if (DEBUG) { Serial.write(incoming); }
     if (incoming == '\n' && rightHandParser.ready) {
       // bounds checking is for people who lack faith
       keyboardPress(RIGHT, rightHandParser.row, rightHandParser.column, stateToAction(rightHandParser.keyState));
@@ -139,13 +139,13 @@ void loop() {
     } else if (rightHandParser.index == 0) {
       rightHandParser.keyState = (incoming == 'p') ? PRESSED : RELEASED;
       rightHandParser.ready = true; // is this isn't set, then fail this line
-      Serial.print("|| p or r?: "); Serial.println(incoming);
+      if (DEBUG) { Serial.print("|| p or r?: "); Serial.println(incoming); }
     } else if (rightHandParser.index == 9) {
       rightHandParser.row = 3 - (incoming - '0'); // was upside down for some reason
-      Serial.print("|| first number:"); Serial.println(incoming);
+      if (DEBUG) { Serial.print("|| first number:"); Serial.println(incoming); }
     } else if (rightHandParser.index == 11) {
       rightHandParser.column = incoming - '0';
-      Serial.print("|| second number:"); Serial.println(incoming);
+      if (DEBUG) { Serial.print("|| second number:"); Serial.println(incoming); }
     }
 
     // increment index for string that we're parsing
@@ -228,21 +228,24 @@ void keyboardPress(Side side, int row, int column, Action action){
   // gets the right keyboard and cell within it, and sets to new value
   // SO TERSE!
   KeyState* activeKey = &((side == LEFT) ? leftKeys : rightKeys)[row][column];
-  Serial.println("apply action {action} with current state {state}");
-  Serial.print(action); Serial.println(*activeKey);
+  if (DEBUG){
+    Serial.println("apply action {action} with current state {state}");
+    Serial.print(action); Serial.println(*activeKey);
+  }
   *activeKey = actionToState(action, *activeKey);
 
   // used global KeyState to determine shift and special
   char key = getCharacter(side, row, column);
 
-  Serial.println("after:");
-  printKeyState();
-  Serial.print("row: "); Serial.print(row); Serial.print(" column: "); Serial.print(column);Serial.println();
-  Serial.print(key); Serial.println((int) key);
-  Serial.println("held keys: shift, special, conrole, alt, nav");
-  Serial.print(*shiftKey); Serial.print(*specialKey); Serial.print(*controlKey); Serial.print(*altKey); Serial.print(*navKey);
-  Serial.print('\n');
-
+  if (DEBUG){
+    Serial.println("after:");
+    printKeyState();
+    Serial.print("row: "); Serial.print(row); Serial.print(" column: "); Serial.print(column);Serial.println();
+    Serial.print(key); Serial.println((int) key);
+    Serial.println("held keys: shift, special, conrole, alt, nav");
+    Serial.print(*shiftKey); Serial.print(*specialKey); Serial.print(*controlKey); Serial.print(*altKey); Serial.print(*navKey);
+    Serial.print('\n');
+  }
 
   // send the keypress or release to PC
   // based on our updated global state
