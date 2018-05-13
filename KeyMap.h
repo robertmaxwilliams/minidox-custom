@@ -33,7 +33,7 @@ char leftKeyMap[4][5] = {
 char rightKeyMap[4][5] = {
   "yuiop",
   "hjkl;",
-  "bnm,.",
+  "nm,.-",
   {'\0', '\0', '\0',  '\0', '\0'}
 };
 
@@ -47,7 +47,7 @@ char leftShiftKeyMap[4][5] = {
 char rightShiftKeyMap[4][5] = {
   "YUIOP",
   "HJKL:",
-  "BNM,.",
+  "NM,._",
   {'\0', '\0', '\0',  '\0', '\0'}
 };
 
