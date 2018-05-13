@@ -1,4 +1,4 @@
-
+const int DEBUG = true;
 /* 
 
 glossary of terms:
@@ -22,7 +22,6 @@ the keymaps are char[HEIGHT][WIDTH] stored as KeyMap[row][column]
 
 const int WIDTH = 5;
 const int HEIGHT = 4;
-const int DEBUG = false;
 
 // keyboard wires randomly plugged into pins 10 to 2
 const int readingCount = WIDTH; // vertical wires
@@ -63,7 +62,7 @@ KeyState leftKeys[HEIGHT][WIDTH];
 KeyState rightKeys[HEIGHT][WIDTH];
 
 // These are read by findCharacter to determine modifier state
-const KeyState* shiftKey = &leftKeys[3][0];
+const KeyState* shiftKey = &leftKeys[3][2];
 const KeyState* specialKey = &leftKeys[3][1];
 const KeyState* controlKey = &leftKeys[3][2];
 const KeyState* altKey = &leftKeys[3][3];

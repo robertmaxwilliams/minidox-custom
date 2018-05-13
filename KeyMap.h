@@ -14,7 +14,7 @@ char leftModifiers[4][5] = {
   {'\0',  '\0',  '\0',  '\0',  '\0'},
   {'KEY_BACKSPACE',  '\0',  '\0',  '\0',  '\0'},
   {'\0',  '\0',  '\0',  '\0',  '\0'},
-  {KEY_LEFT_ALT, KEY_SPECIAL, KEY_LEFT_SHIFT, KEY_LEFT_CTRL, KEY_ESC},
+  {KEY_LEFT_GUI, KEY_SPECIAL, KEY_LEFT_SHIFT, KEY_LEFT_CTRL, KEY_ESC},
 };
 
 char rightModifiers[4][5] = {
