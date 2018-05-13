@@ -22,7 +22,7 @@ the keymaps are char[HEIGHT][WIDTH] stored as KeyMap[row][column]
 
 const int WIDTH = 5;
 const int HEIGHT = 4;
-const int DEBUG = true;
+const int DEBUG = false;
 
 // keyboard wires randomly plugged into pins 10 to 2
 const int readingCount = WIDTH; // vertical wires
