@@ -14,11 +14,11 @@ this main polling loop is done with polling as outer, reading as inner.
 
 the keymaps are char[HEIGHT][WIDTH] stored as KeyMap[row][column]
 
-
 */
 #include <SoftwareSerial.h>
 #include <Keyboard.h>
 #include "KeyMap.h"
+#include "Secrets.h"
 
 const int WIDTH = 5;
 const int HEIGHT = 4;
@@ -62,10 +62,11 @@ KeyState leftKeys[HEIGHT][WIDTH];
 KeyState rightKeys[HEIGHT][WIDTH];
 
 // These are read by findCharacter to determine modifier state
-const KeyState* shiftKey = &leftKeys[3][2];
-const KeyState* specialKey = &leftKeys[3][1];
-const KeyState* controlKey = &leftKeys[3][2];
-const KeyState* altKey = &leftKeys[3][3];
+const KeyState* specialKey = &leftKeys[3][0];
+const KeyState* controlKey = &leftKeys[3][1];
+const KeyState* shiftKey =   &leftKeys[3][2];
+const KeyState* altKey =     &leftKeys[3][3];
+
 const KeyState* navKey = &rightKeys[3][4];
 
 // rx and tx (only rx is used) from rightHand legacy hardware
@@ -244,6 +245,27 @@ void keyboardPress(Side side, int row, int column, Action action){
     Serial.println("held keys: shift, special, conrole, alt, nav");
     Serial.print(*shiftKey); Serial.print(*specialKey); Serial.print(*controlKey); Serial.print(*altKey); Serial.print(*navKey);
     Serial.print('\n');
+  }
+
+  // quick and dirty: adds new feature to print out constant strings
+  // kept in secret file because... well they're secret, okay? Gee.
+  if (key == char(SEND_STRING) && *activeKey == PRESSED){
+    Serial.println("sending string");
+    Keyboard.write('!');
+
+    switch (column){
+      case 0:
+        Keyboard.print(SECRET1); break;
+      case 1:
+        Keyboard.print(SECRET2); break;
+      case 2:
+        Keyboard.print(SECRET3); break;
+     case 4:
+        Keyboard.print(SECRET4); break;
+     default:
+        Keyboard.print("err0r"); break;
+    }
+    return; // return early
   }
 
   // send the keypress or release to PC
